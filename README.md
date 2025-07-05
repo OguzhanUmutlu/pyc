@@ -123,7 +123,7 @@ int main() {
 The problem with this approach is that the compiler has to generate a lot of code for each if-else statement, and it
 grows exponentially with the number of if-else statements. This is a huge problem if there are too many dynamically
 typed variables. And as far as I could see, there is no practical way to solve this problem of having dynamically typed
-variables get in branches or loops as we will see in a bit.
+variables get in conditionals or loops as we will see in a bit.
 
 ## 2) Loops
 
@@ -185,5 +185,5 @@ In the compiled codes above I notated the tag as with two types (for example `in
 amount of types a variable has can get into thousands! So this is not even close to a practical solution. The only
 sensible way seems to be to just use a general type struct like `PyObject`. So until you or I get a new idea that can
 solve any two of these problems, this concludes a month-long journey of me trying to make a Python-like language that
-compiles to C. Was good practice of C though I have to say, after all I did write an entire lexer and parser in C, which
-was a lot of fun. Thanks for reading!
+compiles to C. Was good practice of C though I have to say, after all I did write an entire lexer and parser of Python
+in C, which was a lot of fun. Thanks for reading!
