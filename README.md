@@ -10,13 +10,13 @@ code. Here are the definitions:
 
 ```c++
 // src/lexer.h
-void pyc_lexer_init(char *code)
-void pyc_tokenize()
+void pyc_lexer_init(char *code);
+void pyc_tokenize();
 ```
 
 ```c++
 // src/parser.h
-node *parse_file(node *parent, char *filename, char *code)
+node *parse_file(node *parent, char *filename, char *code);
 ```
 
 **This implementation was optimized for C so it is about 4-5 times faster than the official Python lexer and parser.**
@@ -96,8 +96,8 @@ faster, but it has a problem of its own too.
 
 ## 1.b) Compile by branching
 
-The compiler creates a tag for the variable and uses it to determine the type of the variable inside the if-else
-statements. Then after the if-else statement ends, it is used as a tagged variable.
+The compiler will branch the code outside the if-else statements, compiling them twice using the known type of the
+variables at that point. This is the fastest approach I could find. Here's the compiled code:
 
 ```c++
 #include <pyc_stdlib.h>
