@@ -70,7 +70,7 @@ int main() {
     printf("%ld\n", a.i);
     a.s = input("");
     printf("%s\n", a.s.data);
-    char a_tag = 0; // 0 for int, 1 for float
+    char a_tag; // 0 for int, 1 for float
     if (a.s.length > 5) {
         a.f = 5.7;
         // We don't have to change the tag here, tag is only set at the end.
@@ -154,7 +154,7 @@ Is compiled to:
 int main() {
     union{long i; string s} a;
     // We split now because the loop will be changing the type of a.
-    char a_t = 0; // 0 for int, 1 for string
+    char a_t; // 0 for int, 1 for string
     for (union{long i} i = 0; i < 100; i++) {
         if (i.i % 2 == 0) {
             a.i = i.i;
