@@ -19,7 +19,7 @@
         void singular##_free(val obj);                                         \
         vec_define(val, plural);                                               \
         vec_define_free(val, plural, singular##_free(a));                      \
-        void singular##_print(val obj, int indent);                            \
+        void singular##_print(const val obj, const int indent);                            \
         vec_define_print(val, plural, singular##_print(a, indent));
 #else
 #define vec_define_pyc(singular, plural, val)                              \
@@ -29,16 +29,11 @@
 #endif
 
 #include "vec.h"
-#include <ctype.h>
 #include <math.h>
 #include <signal.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <gmp.h>
-#include <stdarg.h>
 
 #define print_spaces(spaces)                                                   \
     for (int __ir = 0; __ir < spaces; __ir++)                                  \
@@ -104,9 +99,9 @@ typedef struct {
     size_t size;
 } sstream;
 
-void sstream_print(sstream *a, int _);
+void sstream_print(const sstream *a, int _);
 
-void sstream_append_l(sstream *a, char *b, size_t b_len);
+void sstream_append_l(sstream *a, const char *b, size_t b_len);
 
 void sstream_appendf(sstream *a, const char *fmt, ...);
 
@@ -220,5 +215,9 @@ static inline void bigints_print_indent(bigints v, size_t indent) {
 #define ensure_str(x) ((x) == NULL ? "" : (x))
 
 #define sstream_append(a, b) sstream_append_l(a, b, strlen(b))
+
+#ifndef __THROWNL
+#define __THROWNL
+#endif
 
 #endif // PYC_UTILS_H

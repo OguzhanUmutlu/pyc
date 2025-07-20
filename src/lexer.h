@@ -128,26 +128,26 @@
 #define TOKEN_NONE 0xD
 
 static const char *keyword_names[] = {
-        "if", "else", "elif", "for", "while", "def", "return", "type", "import", "from", "as",
-        "with", "try", "except", "finally", "raise", "pass", "break", "continue", "lambda",
-        "yield", "global", "nonlocal", "assert", "del", "async", "await", "match", "case"
+    "if", "else", "elif", "for", "while", "def", "return", "type", "import", "from", "as",
+    "with", "try", "except", "finally", "raise", "pass", "break", "continue", "lambda",
+    "yield", "global", "nonlocal", "assert", "del", "async", "await", "match", "case"
 };
 static const size_t keywords_count = sizeof(keyword_names) / sizeof(keyword_names[0]);
 
 static const char *symbols[] = {
-        "==",
+    "==",
 
-        "=", "**=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=",
-        "^=", "~=", "<<=", ">>=", "@=",
+    "=", "**=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=",
+    "^=", "~=", "<<=", ">>=", "@=",
 
-        "**", "+", "-", "*", "/", "//", "%", "&", "|", "^",
-        "~", "<<", ">>", "@", "!=", ">=", "<=", ">", "<", ":=",
+    "**", "+", "-", "*", "/", "//", "%", "&", "|", "^",
+    "~", "<<", ">>", "@", "!=", ">=", "<=", ">", "<", ":=",
 
-        "(", ")", "[", "]", "{", "}", ":", ",", ".", "!"
+    "(", ")", "[", "]", "{", "}", ":", ",", ".", "!"
 };
 
 static const char *word_operators[] = {
-        "in", "is", "not", "and", "or"
+    "in", "is", "not", "and", "or"
 };
 static const size_t word_operators_count = sizeof(word_operators) / sizeof(word_operators[0]);
 #define WORD_OPERATOR_IN_INDEX 0
@@ -159,9 +159,9 @@ static const size_t word_operators_count = sizeof(word_operators) / sizeof(word_
 static const size_t symbols_count = sizeof(symbols) / sizeof(symbols[0]);
 
 static const char *token_type_str[] = {
-        "keyword", "boolean", "operator", "set_operator", "symbol", "line_break",
-        "identifier", "integer", "float", "string", "fstring_start", "fstring_middle",
-        "fstring_end", "none"
+    "keyword", "boolean", "operator", "set_operator", "symbol", "line_break",
+    "identifier", "integer", "float", "string", "fstring_start", "fstring_middle",
+    "fstring_end", "none"
 };
 
 typedef struct token {
@@ -176,7 +176,7 @@ void token_p_free(token *obj);
 
 vec_define(token*, tokens_p);
 
-void token_p_print(token *obj, int indent);
+void token_p_print(const token *obj, int indent);
 
 vec_define_print(token*, tokens_p, token_p_print(a, indent));
 
@@ -185,6 +185,7 @@ typedef struct {
     size_t start;
     size_t end;
 } code_substr;
+
 vec_define(code_substr, code_substrs);
 
 extern char *pyc_code;
@@ -248,6 +249,6 @@ static inline void print_line(size_t i) {
     putchar('\n');
 }
 
-__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err, bool has_line);
+__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err, const bool has_line);
 
 #endif // PYC_LEXER_H

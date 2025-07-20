@@ -75,7 +75,7 @@ typedef struct {
 
 vec_define_pyc(variable_type_holder, variable_type_holders, variable_type_holder)
 
-bool variable_type_equals(variable_type *a, variable_type *b);
+bool variable_type_equals(const variable_type *a, const variable_type *b);
 
 bool variable_types_equals(variable_types a, variable_types b);
 
@@ -113,13 +113,13 @@ struct scope {
 
 #define scope_append(a, b) scope_append_l(a, b, strlen(b))
 
-void scope_append_l(scope *sc, char *b, size_t b_len);
+void scope_append_l(const scope *sc, const char *b, size_t b_len);
 
-void scope_appendf(scope *s, const char *fmt, ...);
+void scope_appendf(const scope *s, const char *fmt, ...);
 
 vec_define_pyc(scope, scopes, scope)
 
-variable *get_variable(scope *n, size_t v);
+variable *get_variable(const scope *n, size_t v);
 
 size_t set_variable(scope *n, size_t v, variable_type *type);
 

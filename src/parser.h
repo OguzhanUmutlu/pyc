@@ -371,9 +371,9 @@ node *parse_expression_group_child(node *parent);
 
 void parse_expression_next(node *node);
 
-void parse_expression_tuple(node *node);
+void parse_expression_tuple(node *ex);
 
-void parse_expression_list(node *node);
+void parse_expression_list(node *ex);
 
 void parse_expression_dict(node *node);
 
@@ -383,7 +383,7 @@ void parse_expression_await(node *ex);
 
 void parse_expression_yield(node *ex);
 
-void parse_expression(node *node);
+void parse_expression(node *ex);
 
 void parse_comprehensions_post(node *parent, comprehensions *list);
 
@@ -391,8 +391,8 @@ void parse_statements(node *st);
 
 void parse_statement_next(node *st, int spaces);
 
-void parse_statement_group(node *st, int spaces);
+void parse_statement_group(node *st, int spaces_parent);
 
-token *get_node_token(node *node);
+token *get_node_token(const node *node);
 
 #endif // PYC_PARSER_H

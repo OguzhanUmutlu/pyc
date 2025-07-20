@@ -1,5 +1,21 @@
 #include "lexer.h"
 
+#include <ctype.h>
+#include <string.h>
+
+// ReSharper disable CppParameterNamesMismatch
+
+#ifndef strndup
+char *strndup(const char *s, size_t n) {
+    char *p = malloc(n + 1);
+    if (p) {
+        memcpy(p, s, n);
+        p[n] = '\0';
+    }
+    return p;
+}
+#endif
+
 char *pyc_code;
 size_t pyc_ci;
 size_t pyc_code_len;
@@ -19,14 +35,14 @@ void pyc_lexer_init(char *code) {
     tokens_init(&pyc_tokens);
 }
 
-size_t temp_identifiers_introduce(size_t start, size_t end) {
-    size_t len = end - start;
+size_t temp_identifiers_introduce(const size_t start, const size_t end) {
+    const size_t len = end - start;
     for (size_t i = 0; i < pyc_temp_identifiers.size; i++) {
-        code_substr ex = pyc_temp_identifiers.data[i];
+        const code_substr ex = pyc_temp_identifiers.data[i];
         if (ex.start == start) return i;
         if (end - start == ex.end - ex.start) {
-            char *p1 = pyc_code + start;
-            char *p2 = ex.code + ex.start;
+            const char *p1 = pyc_code + start;
+            const char *p2 = ex.code + ex.start;
             for (size_t j = 0; j < len; j++) {
                 if (*p1++ != *p2++) break;
                 if (j == len - 1) return i;
@@ -34,7 +50,7 @@ size_t temp_identifiers_introduce(size_t start, size_t end) {
         }
     }
 
-    code_substrs_push(&pyc_temp_identifiers, (code_substr) {.code=pyc_code, .start=start, .end=end});
+    code_substrs_push(&pyc_temp_identifiers, (code_substr){.code = pyc_code, .start = start, .end = end});
     return pyc_temp_identifiers.size - 1;
 }
 
@@ -49,7 +65,7 @@ size_t temp_bigints_introduce(mpz_t x) {
     return pyc_temp_bigints.size - 1;
 }
 
-size_t temp_doubles_introduce(double x) {
+size_t temp_doubles_introduce(const double x) {
     for (size_t i = 0; i < pyc_temp_doubles.size; i++) {
         if (pyc_temp_doubles.data[i] == x) return i;
     }
@@ -58,30 +74,30 @@ size_t temp_doubles_introduce(double x) {
     return pyc_temp_doubles.size - 1;
 }
 
-void pyc_load(char *code, tokens tokens) {
+void pyc_load(char *code, const tokens tokens) {
     pyc_code = code;
     pyc_code_len = strlen(code);
     pyc_ti = 0;
     pyc_tokens = tokens;
 }
 
-bool str_ind_eq(size_t start, size_t end, const char *target) {
-    size_t len = end - start;
+bool str_ind_eq(const size_t start, const size_t end, const char *target) {
+    const size_t len = end - start;
     if (len != strlen(target)) return 0;
     return strncmp(pyc_code + start, target, len) == 0;
 }
 
-char *str_ind_dup(size_t start, size_t end) {
+char *str_ind_dup(const size_t start, const size_t end) {
     return strndup(pyc_code + start, end - start);
 }
 
-char *str_tok_dup(token t) {
+char *str_tok_dup(const token t) {
     return strndup(pyc_code + t.start, t.end - t.start);
 }
 
-size_t match_symbol(size_t i, size_t len, char **matched) {
+size_t match_symbol(const size_t i, const size_t len, char **matched) {
     for (size_t s = 0; s < symbols_count; s++) {
-        size_t sLen = strlen(symbols[s]);
+        const size_t sLen = strlen(symbols[s]);
         if (i + sLen <= len && str_ind_eq(i, i + sLen, symbols[s])) {
             *matched = (char *) symbols[s];
             return s;
@@ -99,9 +115,11 @@ typedef struct {
 
 vec_define_pyc(fstring, fstrings, fstring)
 
-inline void fstring_free(fstring t) {}
+inline void fstring_free(fstring t) {
+}
 
-void pyc_feed() { // TODO: re-implement the tokenizer to allow live-streaming data
+void pyc_feed() {
+    // TODO: re-implement the tokenizer to allow live-streaming data
 }
 
 #include <gmp.h>
@@ -109,8 +127,9 @@ void pyc_feed() { // TODO: re-implement the tokenizer to allow live-streaming da
 #include <string.h>
 #include <stdbool.h>
 
-static inline bool extract_number(size_t start, size_t end, bool is_float, double *out_float, mpz_t out_int) {
-    size_t len = end - start;
+static inline bool extract_number(const size_t start, const size_t end, const bool is_float, double *out_float,
+                                  mpz_t out_int) {
+    const size_t len = end - start;
     char *buf = (char *) malloc(len + 1);
     if (!buf) return false;
     memcpy(buf, pyc_code + start, len);
@@ -141,12 +160,12 @@ static inline bool extract_number(size_t start, size_t end, bool is_float, doubl
         }
         char *end_ptr;
         *out_float = strtod(buf, &end_ptr);
-        bool success = (*end_ptr == '\0');
+        const bool success = (*end_ptr == '\0');
         free(buf);
         return success;
     }
 
-    int err = mpz_set_str(out_int, base == 10 ? buf : buf + 2, base);
+    const int err = mpz_set_str(out_int, base == 10 ? buf : buf + 2, base);
     free(buf);
     return err == 0;
 }
@@ -274,12 +293,12 @@ void pyc_tokenize() {
             tok.start = pyc_ci;
             tok.end = pyc_ci += match_len;
             tok.type = symbol_ind == 0
-                       ? TOKEN_OPERATOR_EQ
-                       : (symbol_ind <= SYMBOLS_SET_OPERATOR
-                          ? (TOKEN_SET_OPERATOR | ((symbol_ind - 1) << 4))
-                          : (symbol_ind <= SYMBOLS_OPERATOR
-                             ? (TOKEN_OPERATOR | ((symbol_ind - SYMBOLS_SET_OPERATOR) << 4))
-                             : (TOKEN_SYMBOL | ((symbol_ind - SYMBOLS_OPERATOR - 1) << 4))));
+                           ? TOKEN_OPERATOR_EQ
+                           : (symbol_ind <= SYMBOLS_SET_OPERATOR
+                                  ? (TOKEN_SET_OPERATOR | ((symbol_ind - 1) << 4))
+                                  : (symbol_ind <= SYMBOLS_OPERATOR
+                                         ? (TOKEN_OPERATOR | ((symbol_ind - SYMBOLS_SET_OPERATOR) << 4))
+                                         : (TOKEN_SYMBOL | ((symbol_ind - SYMBOLS_OPERATOR - 1) << 4))));
             tokens_push(&pyc_tokens, tok);
             continue;
         }
@@ -361,11 +380,11 @@ void pyc_tokenize() {
                         || pyc_code[pyc_ci + 1] == 'O'
                         || pyc_code[pyc_ci + 1] == 'b'
                         || pyc_code[pyc_ci + 1] == 'B'
-                )) {
+                    )) {
                     pyc_ci += 2;
                 } else {
                     raise_error_i(pyc_ci, "SyntaxError: leading zeros in decimal integer literals "
-                                          "are not permitted; use an 0o prefix for octal integers", false);
+                                  "are not permitted; use an 0o prefix for octal integers", false);
                 }
             }
 
@@ -445,8 +464,6 @@ void pyc_tokenize() {
             pyc_ci += is_triple ? 3 : 1;
 
             bool is_fstring = false;
-            bool is_raw = false;
-            bool is_binary = false;
             bool slash = false;
             bool has_format = false;
             int flag = 0;
@@ -454,6 +471,8 @@ void pyc_tokenize() {
             token back;
             if (pyc_tokens.size > 0 && (back = *tokens_back(pyc_tokens)).type == TOKEN_IDENTIFIER &&
                 back.end == start) {
+                bool is_binary = false;
+                bool is_raw = false;
                 if (tok_val_eq(back, "f")) {
                     flag = 0x10;
                     is_binary = true;
@@ -482,11 +501,11 @@ void pyc_tokenize() {
                     if (pyc_ci + 1 < pyc_code_len && pyc_code[pyc_ci + 1] == '{') {
                         pyc_ci += 2;
                         continue;
-                    } else {
-                        has_format = true;
-                        pyc_ci++;
-                        break;
                     }
+
+                    has_format = true;
+                    pyc_ci++;
+                    break;
                 }
 
                 if (c == '\r') {
@@ -542,11 +561,11 @@ void pyc_tokenize() {
     pyc_tok_count = pyc_tokens.size;
 }
 
-void get_index_pos(size_t index, size_t *l, size_t *c) {
+void get_index_pos(const size_t index, size_t *l, size_t *c) {
     size_t line = 0;
     size_t column = 0;
     for (size_t i = 0; i < index; i++) {
-        char ch = pyc_code[i];
+        const char ch = pyc_code[i];
         if (ch == '\n') {
             line++;
             column = 0;
@@ -559,7 +578,7 @@ void get_index_pos(size_t index, size_t *l, size_t *c) {
     *c = column;
 }
 
-void get_line_bound(size_t index, size_t *s, size_t *e) {
+void get_line_bound(const size_t index, size_t *s, size_t *e) {
     size_t start = 0;
     size_t st_index = index == 0 ? 0 : index - 1;
     if (pyc_code[index] == '\n' || pyc_code[index] == '\r') {
@@ -568,7 +587,7 @@ void get_line_bound(size_t index, size_t *s, size_t *e) {
     }
 
     for (size_t i = st_index; i-- > 0;) {
-        char c = pyc_code[i];
+        const char c = pyc_code[i];
         if (c == '\n' || c == '\r') {
             start = i + 1;
             *s = start;
@@ -579,7 +598,7 @@ void get_line_bound(size_t index, size_t *s, size_t *e) {
     if (start == 0) *s = 0;
 
     for (size_t i = index; i < pyc_code_len; i++) {
-        char c = pyc_code[i];
+        const char c = pyc_code[i];
         if (c == '\n' || c == '\r') {
             *e = i;
             return;
@@ -589,18 +608,20 @@ void get_line_bound(size_t index, size_t *s, size_t *e) {
     *e = pyc_code_len;
 }
 
-inline void token_free(token _) {}
+inline void token_free(token _) {
+}
 
-inline void token_p_free(token *_) {}
+inline void token_p_free(token *_) {
+}
 
 #define TOKEN_ONLY_TEXT
 //#define TOKEN_PRINTS_POSITION
 
 #ifdef NEED_AST_PRINT
 
-void print_readable(const char *code, size_t start, size_t end) {
+void print_readable(const char *code, const size_t start, const size_t end) {
     for (size_t i = start; i < end; i++) {
-        char c = code[i];
+        const char c = code[i];
         if (isprint(c)) {
             putchar(c);
         } else if (c == '\n') {
@@ -629,7 +650,7 @@ void token_print(token tok, int indent) {
 #endif
 }
 
-void token_p_print(token *tok, int indent) {
+void token_p_print(const token *tok, const int indent) {
     if (tok == NULL) {
         printf("NULL");
         return;
@@ -640,7 +661,7 @@ void token_p_print(token *tok, int indent) {
 
 #endif
 
-__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err, bool has_line) {
+__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err, const bool has_line) {
     if (i >= pyc_code_len) i = pyc_code_len == 0 ? 0 : pyc_code_len - 1;
     size_t line, column;
     get_index_pos(i, &line, &column);
@@ -660,3 +681,5 @@ __THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err
 
     fail();
 }
+
+// ReSharper restore CppParameterNamesMismatch

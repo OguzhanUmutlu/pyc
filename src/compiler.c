@@ -1,4 +1,8 @@
 #include "compiler.h"
+#include <string.h>
+#include <stdarg.h>
+
+// ReSharper disable CppParameterNamesMismatch
 
 #define CREATED_FLAG ((size_t)1 << (sizeof(size_t)*8 - 1))
 
@@ -12,7 +16,7 @@ static const variable_type type_bool = {.type = VARIABLE_CLASS_BOOLEAN};
 static const variable_type type_none = {.type = VARIABLE_CLASS_NONE};
 static size_t var_index = 0;
 
-void scope_append_l(scope *sc, char *b, size_t b_len) {
+void scope_append_l(const scope *sc, const char *b, const size_t b_len) {
     if (sc == NULL || sc->content == NULL) {
         fprintf(stderr, "Error: scope or content is NULL\n");
         fail();
@@ -27,7 +31,7 @@ void scope_append_l(scope *sc, char *b, size_t b_len) {
     if (b != NULL) memcpy(sc->content->data + len, b, b_len);
 };
 
-void scope_appendf(scope *sc, const char *fmt, ...) {
+void scope_appendf(const scope *sc, const char *fmt, ...) {
     if (sc == NULL || sc->content == NULL) {
         fprintf(stderr, "Error: scope or content is NULL\n");
         fail();
@@ -43,7 +47,7 @@ void scope_appendf(scope *sc, const char *fmt, ...) {
     va_start(args, fmt);
     va_list args_copy;
     va_copy(args_copy, args);
-    int needed = vsnprintf(NULL, 0, fmt, args_copy);
+    const int needed = vsnprintf(NULL, 0, fmt, args_copy);
     va_end(args_copy);
     if (needed < 0) {
         va_end(args);
@@ -61,7 +65,7 @@ void scope_appendf(scope *sc, const char *fmt, ...) {
     sstream_append_l(sc->content, buf, (size_t) needed);
 };
 
-bool variable_types_equals(variable_types a, variable_types b) { // NOLINT(*-no-recursion)
+bool variable_types_equals(const variable_types a, const variable_types b) { // NOLINT(*-no-recursion)
     if (a.size != b.size) return false;
     for (size_t i = 0; i < a.size; i++) {
         if (!variable_type_equals(a.data[i], b.data[i])) return false;
@@ -70,7 +74,7 @@ bool variable_types_equals(variable_types a, variable_types b) { // NOLINT(*-no-
     return true;
 }
 
-bool variable_type_equals(variable_type *a, variable_type *b) { // NOLINT(*-no-recursion)
+bool variable_type_equals(const variable_type *a, const variable_type *b) { // NOLINT(*-no-recursion)
     if (a == b) return true;
     if (a == NULL || b == NULL || a->type != b->type) return false;
 
@@ -108,8 +112,8 @@ bool variable_type_equals(variable_type *a, variable_type *b) { // NOLINT(*-no-r
         case VARIABLE_CLASS_AOT_FLOAT:
             return a->aot_float == b->aot_float;
         case VARIABLE_CLASS_AOT_STRING: {
-            code_substr as = a->aot_string;
-            code_substr bs = b->aot_string;
+            const code_substr as = a->aot_string;
+            const code_substr bs = b->aot_string;
             return as.end - as.start == bs.end - bs.start &&
                    strncmp(as.code + as.start, bs.code + bs.start, as.end - as.start) == 0;
         }
@@ -118,9 +122,11 @@ bool variable_type_equals(variable_type *a, variable_type *b) { // NOLINT(*-no-r
         case VARIABLE_CLASS_GROUP:
             return variable_types_equals(a->group, b->group);
     }
+
+    return false;
 }
 
-variable *get_variable(scope *out, size_t name) {
+variable *get_variable(const scope *out, const size_t name) {
     while (out != NULL) {
         for (size_t i = 0; i < out->vars.size; i++) {
             variable *var = &out->vars.data[i];
@@ -131,7 +137,7 @@ variable *get_variable(scope *out, size_t name) {
     return NULL;
 }
 
-size_t set_variable(scope *out, size_t name, variable_type *type) {
+size_t set_variable(scope *out, const size_t name, variable_type *type) {
     if (out == NULL) {
         fprintf(stderr, "Error: scope is NULL\n");
         fail();
@@ -143,13 +149,13 @@ size_t set_variable(scope *out, size_t name, variable_type *type) {
         return var->index;
     }
 
-    variable new_var = {.index = ++var_index, .name = name, .type = type};
+    const variable new_var = {.index = ++var_index, .name = name, .type = type};
     variables_push(&out->vars, new_var);
 
     return var_index | CREATED_FLAG;
 }
 
-void write_variable_type(variable_type *var, scope *out) {
+void write_variable_type(const variable_type *var, const scope *out) {
     if (var == NULL) {
         fprintf(stderr, "Error: variable type is NULL\n");
         fail();
@@ -193,7 +199,7 @@ void write_variable_type(variable_type *var, scope *out) {
     }
 }
 
-void variable_types_copy(variable_types var, variable_types *out) {
+void variable_types_copy(const variable_types var, variable_types *out) {
     out->size = var.size;
     out->capacity = var.capacity;
     out->data = malloc(var.size * sizeof(variable_type *));
@@ -270,14 +276,14 @@ variable_type *variable_type_copy(const variable_type *var) { // NOLINT(*-no-rec
     return new_var;
 }
 
-variable_type *pyc_analyze_expr(node *expr, scope *out) {
+variable_type *pyc_analyze_expr(const node *expr, const scope *out) {
     switch (expr->type) {
         case EXPR_IDENTIFIER: {
-            size_t name = expr->identifier->type >> 4;
-            variable *var = get_variable(out, name);
+            const size_t name = expr->identifier->type >> 4;
+            const variable *var = get_variable(out, name);
             if (var == NULL) {
                 printf("NameError: name '");
-                code_substr name_str = pyc_temp_identifiers.data[name];
+                const code_substr name_str = pyc_temp_identifiers.data[name];
                 print_readable(name_str.code, name_str.start, name_str.end);
                 printf("' is not defined\n");
                 fail();
@@ -287,13 +293,13 @@ variable_type *pyc_analyze_expr(node *expr, scope *out) {
         case EXPR_CONSTANT:
             switch (expr->constant->type & 0xf) {
                 case TOKEN_FLOAT: {
-                    size_t double_index = expr->constant->type >> 4;
+                    const size_t double_index = expr->constant->type >> 4;
                     variable_type *var = variable_type_create(VARIABLE_CLASS_AOT_FLOAT);
                     var->aot_float = pyc_temp_doubles.data[double_index];
                     return var;
                 }
                 case TOKEN_INTEGER: {
-                    size_t int_index = expr->constant->type >> 4;
+                    const size_t int_index = expr->constant->type >> 4;
                     variable_type *var = variable_type_create(VARIABLE_CLASS_AOT_INT);
                     mpz_init_set(var->aot_int, pyc_temp_bigints.data[int_index]);
                     return var;
@@ -351,14 +357,14 @@ variable_type *pyc_analyze_expr(node *expr, scope *out) {
     return NULL;
 }
 
-void pyc_compile_expr(bool new, size_t load, node *expr, scope *out) {
+void pyc_compile_expr(const bool new, const size_t load, const node *expr, const scope *out) {
     switch (expr->type) {
         case EXPR_IDENTIFIER: {
-            size_t name = expr->identifier->type >> 4;
-            variable *var = get_variable(out, name);
+            const size_t name = expr->identifier->type >> 4;
+            const variable *var = get_variable(out, name);
             if (var == NULL) {
                 printf("NameError: name '");
-                code_substr name_str = pyc_temp_identifiers.data[name];
+                const code_substr name_str = pyc_temp_identifiers.data[name];
                 print_readable(name_str.code, name_str.start, name_str.end);
                 printf("' is not defined\n");
                 fail();
@@ -369,8 +375,8 @@ void pyc_compile_expr(bool new, size_t load, node *expr, scope *out) {
         case EXPR_CONSTANT:
             switch (expr->constant->type & 0xf) {
                 case TOKEN_FLOAT: {
-                    size_t double_index = expr->constant->type >> 4;
-                    double d = pyc_temp_doubles.data[double_index];
+                    const size_t double_index = expr->constant->type >> 4;
+                    const double d = pyc_temp_doubles.data[double_index];
                     scope_appendf(out, "var_%zu = %f;", load, d);
                     break;
                 }
@@ -442,23 +448,23 @@ void pyc_compile_expr(bool new, size_t load, node *expr, scope *out) {
     }
 }
 
-void pyc_compile_stmt(node *stmt, scope *out) { // NOLINT(*-no-recursion)
+void pyc_compile_stmt(const node *stmt, scope *out) { // NOLINT(*-no-recursion)
     switch (stmt->type) {
         case NODE_GROUP:
             for (size_t i = 0; i < stmt->group.v.size; i++) {
-                node *child = stmt->group.v.data[i];
+                const node *child = stmt->group.v.data[i];
                 pyc_compile_stmt(child, out);
             }
             break;
         case STMT_ASSIGN: {
-            node *var = stmt->assign.var;
-            node *val = stmt->assign.val;
+            const node *var = stmt->assign.var;
+            const node *val = stmt->assign.val;
             if (var->type == EXPR_IDENTIFIER) {
                 // simple
                 variable_type *type = pyc_analyze_expr(val, out);
-                size_t name = var->identifier->type >> 4;
+                const size_t name = var->identifier->type >> 4;
                 size_t ret = set_variable(out, name, type);
-                bool created = ret & CREATED_FLAG;
+                const bool created = ret & CREATED_FLAG;
                 ret &= ~CREATED_FLAG;
                 if (created) {
                     scope_append_l(out, NULL, 0);
@@ -466,7 +472,7 @@ void pyc_compile_stmt(node *stmt, scope *out) { // NOLINT(*-no-recursion)
                     sstream_appendf(out->content, " var_%zu;\n", ret);
                 }
 
-                // todo: instead of passing in what's created, we should pass in the old type, because that's what actually matters
+                // todo: instead of passing in created, we should pass in the old type, because that's what actually matters
                 pyc_compile_expr(created, ret, val, out);
             }
             break;
@@ -540,7 +546,7 @@ void pyc_compile(char *in_file, const char *out_file) {
     pyc_lexer_init(code);
     pyc_tokenize(); // pls do this after processing: tokens_clear(&pyc_tokens);
 
-    node *prog = parse_file(NULL, in_file, code);
+    const node *prog = parse_file(NULL, in_file, code);
 
     sstream main_content = {.data = NULL, .size = 0};
     scope main_scope = {.parent = NULL, .indent = 1, .name = (size_t) -1, .content = &main_content};
@@ -548,12 +554,12 @@ void pyc_compile(char *in_file, const char *out_file) {
     pyc_compile_stmt(prog, &main_scope);
 
     for (size_t i = 0; i < pyc_out.size; i++) {
-        scope ex = pyc_out.data[i];
+        const scope ex = pyc_out.data[i];
         fprintf(file, "void fn_%zu();\n", ex.name);
     }
 
     for (size_t i = 0; i < pyc_out.size; i++) {
-        scope ex = pyc_out.data[i];
+        const scope ex = pyc_out.data[i];
         fprintf(file, "void fn_%zu() {\n%.*s\n}\n\n", ex.name, (int) ex.content->size, ensure_str(ex.content->data));
     }
 
@@ -575,7 +581,7 @@ void scope_free(scope s) { // NOLINT(*-no-recursion)
     }
 }
 
-void variable_free(variable obj) {
+void variable_free(const variable obj) {
     variable_type_free(obj.type);
 }
 
@@ -633,7 +639,7 @@ void variable_type_free(variable_type *var) { // NOLINT(*-no-recursion)
 
 #ifdef NEED_AST_PRINT
 
-void variable_print(variable var, int indent) {
+void variable_print(const variable var, const int indent) {
     printf("variable(name=");
     token_p_print(var.tok, indent + 1);
     printf(", type=");
@@ -641,11 +647,11 @@ void variable_print(variable var, int indent) {
     printf(")");
 }
 
-void variable_p_print(variable *var, int indent) {
+void variable_p_print(const variable *var, const int indent) {
     variable_print(*var, indent);
 }
 
-void variable_type_print(variable_type *var, int indent) { // NOLINT(*-no-recursion)
+void variable_type_print(const variable_type *var, const int indent) { // NOLINT(*-no-recursion)
     if (var == NULL) {
         printf("NULL");
         return;
@@ -715,5 +721,7 @@ void variable_type_print(variable_type *var, int indent) { // NOLINT(*-no-recurs
 
     printf(")");
 }
+
+// ReSharper restore CppParameterNamesMismatch
 
 #endif

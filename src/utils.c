@@ -1,11 +1,13 @@
 #include "utils.h"
+#include <stdarg.h>
+#include <string.h>
 
-void sstream_print(sstream *a, int _) {
+void sstream_print(const sstream *a, int _) {
     printf("%.*s", (int) a->size, a->data);
 }
 
-void sstream_append_l(sstream *a, char *b, size_t b_len) {
-    size_t new_size = a->size + b_len;
+void sstream_append_l(sstream *a, const char *b, const size_t b_len) {
+    const size_t new_size = a->size + b_len;
     char *new_data = a->data == NULL ? malloc(new_size) : realloc(a->data, new_size);
     if (new_data == NULL) {
         perror("Error reallocating memory for sstream");
@@ -22,7 +24,7 @@ void sstream_appendf(sstream *a, const char *fmt, ...) {
 
     va_list args_copy;
     va_copy(args_copy, args);
-    int needed = vsnprintf(NULL, 0, fmt, args_copy);
+    const int needed = vsnprintf(NULL, 0, fmt, args_copy);
     va_end(args_copy);
 
     if (needed < 0) {
