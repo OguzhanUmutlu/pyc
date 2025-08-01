@@ -171,17 +171,17 @@
 #define vec_define_sort(type, name, comp_st)                                   \
     vec_define_sort2(type, name, name, comp_st)
 #define vec_define_sort2(type, name, fn_name, comp_st)                         \
-    static int _VCFN(fn_name, sort_adapter)(const void *a_ptr,                 \
-                                            const void *b_ptr) {               \
-        const type a = *(const type *)a_ptr;                                   \
-        const type b = *(const type *)b_ptr;                                   \
+    static int _VCFN(fn_name, sort_adapter)(void *a_ptr,                 \
+                                            void *b_ptr) {               \
+        type a = *(type *)a_ptr;                                   \
+        type b = *(type *)b_ptr;                                   \
         return (comp_st);                                                      \
     }                                                                          \
                                                                                \
-    static int _VCFN(fn_name, sort_adapter_rev)(const void *a_ptr,             \
-                                                const void *b_ptr) {           \
-        const type a = *(const type *)a_ptr;                                   \
-        const type b = *(const type *)b_ptr;                                   \
+    static int _VCFN(fn_name, sort_adapter_rev)(void *a_ptr,             \
+                                                void *b_ptr) {           \
+        type a = *(type *)a_ptr;                                   \
+        type b = *(type *)b_ptr;                                   \
         return -(comp_st);                                                     \
     }                                                                          \
                                                                                \

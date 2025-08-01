@@ -127,14 +127,14 @@
 
 #define TOKEN_NONE 0xD
 
-static const char *keyword_names[] = {
+static char *keyword_names[] = {
     "if", "else", "elif", "for", "while", "def", "return", "type", "import", "from", "as",
     "with", "try", "except", "finally", "raise", "pass", "break", "continue", "lambda",
     "yield", "global", "nonlocal", "assert", "del", "async", "await", "match", "case"
 };
-static const size_t keywords_count = sizeof(keyword_names) / sizeof(keyword_names[0]);
+static size_t keywords_count = sizeof(keyword_names) / sizeof(keyword_names[0]);
 
-static const char *symbols[] = {
+static char *symbols[] = {
     "==",
 
     "=", "**=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=",
@@ -146,19 +146,19 @@ static const char *symbols[] = {
     "(", ")", "[", "]", "{", "}", ":", ",", ".", "!"
 };
 
-static const char *word_operators[] = {
+static char *word_operators[] = {
     "in", "is", "not", "and", "or"
 };
-static const size_t word_operators_count = sizeof(word_operators) / sizeof(word_operators[0]);
+static size_t word_operators_count = sizeof(word_operators) / sizeof(word_operators[0]);
 #define WORD_OPERATOR_IN_INDEX 0
 #define WORD_OPERATOR_NOT_INDEX 2
 
 #define SYMBOLS_SET_OPERATOR 15
 #define SYMBOLS_OPERATOR 35
 
-static const size_t symbols_count = sizeof(symbols) / sizeof(symbols[0]);
+static size_t symbols_count = sizeof(symbols) / sizeof(symbols[0]);
 
-static const char *token_type_str[] = {
+static char *token_type_str[] = {
     "keyword", "boolean", "operator", "set_operator", "symbol", "line_break",
     "identifier", "integer", "float", "string", "fstring_start", "fstring_middle",
     "fstring_end", "none"
@@ -176,7 +176,7 @@ void token_p_free(token *obj);
 
 vec_define(token*, tokens_p);
 
-void token_p_print(const token *obj, int indent);
+void token_p_print(token *obj, int indent);
 
 vec_define_print(token*, tokens_p, token_p_print(a, indent));
 
@@ -197,10 +197,10 @@ extern size_t pyc_ti;
 extern tokens pyc_temp_tokens;
 extern code_substrs pyc_temp_identifiers;
 extern code_substrs pyc_temp_strings;
-extern doubles pyc_temp_doubles;
-extern bigints pyc_temp_bigints;
+extern u64_list pyc_temp_ints;
+extern f64_list pyc_temp_floats;
 
-void print_readable(const char *code, size_t start, size_t end);
+void print_readable(char *code, size_t start, size_t end);
 
 void get_index_pos(size_t index, size_t *line, size_t *column);
 
@@ -218,7 +218,7 @@ void pyc_load(char *code, tokens tokens);
 #define tok_peek_teq(peek, target) (token_peek(peek).type == target)
 #define tok_now_teq(target) tok_peek_teq(0, target)
 
-bool str_ind_eq(size_t start, size_t end, const char *target);
+bool str_ind_eq(size_t start, size_t end, char *target);
 
 char *str_ind_dup(size_t start, size_t end);
 
@@ -249,6 +249,6 @@ static inline void print_line(size_t i) {
     putchar('\n');
 }
 
-__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, const char *err, const bool has_line);
+__THROWNL __attribute__((noreturn)) void raise_error_i(size_t i, char *err, bool has_line);
 
 #endif // PYC_LEXER_H

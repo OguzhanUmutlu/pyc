@@ -6,11 +6,11 @@
 // ReSharper disable CppParameterNamesMismatch
 static bool paren = false;
 
-size_t count_indent(const size_t index) {
+size_t count_indent(size_t index) {
     size_t spaces = 0;
 
     for (size_t i = index - 1; i-- > 0;) {
-        const char ch = pyc_code[i];
+        char ch = pyc_code[i];
         if (ch == ' ' || ch == '\t') spaces++;
         else break;
     }
@@ -30,13 +30,13 @@ node *parse_file(node *parent, char *filename, char *code) {
     return parsed;
 }
 
-size_t get_node_tok_index(const size_t expect, const bool care_colon, const bool care_comma, const bool anyways) {
+size_t get_node_tok_index(size_t expect, bool care_colon, bool care_comma, bool anyways) {
     int p1 = 0, p2 = 0, p3 = 0;
 
     for (size_t i = pyc_ti; i < pyc_tok_count; i++) {
-        const token tok = pyc_tokens.data[i];
-        const size_t tok_type = tok.type;
-        const size_t tok_type_t = tok_type & 0xf;
+        token tok = pyc_tokens.data[i];
+        size_t tok_type = tok.type;
+        size_t tok_type_t = tok_type & 0xf;
         if (p1 == 0 && p2 == 0 && p3 == 0 && tok.type == expect) {
             return i;
         }
@@ -106,7 +106,7 @@ node *simplify_group(node *ex) {
 // If group has 1 element, it replaces the group with the value in it
 bool trim_group(node *ex) {
     if (ex->group.v.size == 1) {
-        const node *el = ex->group.v.data[0];
+        node *el = ex->group.v.data[0];
         free(ex->group.v.data);
         *ex = *el;
         return true;
@@ -124,7 +124,7 @@ bool trim_group(node *ex) {
      tok_type == TOKEN_SYMBOL_EXC)
 
 void parser_ignore_type() {
-    const size_t end_ind = get_node_tok_index(TOKEN_SET_OPERATOR_EQ, true, false, true);
+    size_t end_ind = get_node_tok_index(TOKEN_SET_OPERATOR_EQ, true, false, true);
     if (end_ind != -1)
         pyc_ti = end_ind;
 }
@@ -136,7 +136,7 @@ bool pratt_free; // basically frees operators if true
 
 #define pratt_tokens_over() (pratt_pos >= pratt_tok_count)
 
-static inline size_t pratt_lbp(const size_t tok_type) {
+static inline size_t pratt_lbp(size_t tok_type) {
     switch (tok_type) {
         case TOKEN_OPERATOR_WALRUS:
             return 1;
@@ -182,12 +182,12 @@ static inline size_t pratt_lbp(const size_t tok_type) {
     }
 }
 
-node *parse_pratt_iter(const size_t rbp) {
+node *parse_pratt_iter(size_t rbp) {
     node *nd = pratt_tokens.data[pratt_pos++];
     node *left = nd;
     if (nd->type == EXPR_OPERATOR) {
         token *tok = nd->operator;
-        const size_t tok_type = tok->type;
+        size_t tok_type = tok->type;
         if (tok_type == TOKEN_OPERATOR_ADD || tok_type == TOKEN_OPERATOR_SUB || tok_type == TOKEN_OPERATOR_BIT_NOT ||
             tok_type == TOKEN_OPERATOR_NOT) {
             left = ast_node_create(nd->parent);
@@ -199,11 +199,11 @@ node *parse_pratt_iter(const size_t rbp) {
     }
 
     while (!pratt_tokens_over()) {
-        const node *now = pratt_tokens.data[pratt_pos];
+        node *now = pratt_tokens.data[pratt_pos];
         if (now->type != EXPR_OPERATOR) break;
 
         token *tok = now->operator;
-        const size_t tok_type = tok->type;
+        size_t tok_type = tok->type;
         if (pratt_lbp(tok->type) <= rbp) break;
         pratt_pos++;
 
@@ -242,7 +242,7 @@ node *parse_pratt_iter(const size_t rbp) {
                     }
 
                     token *new_tok = new_nd->operator;
-                    const size_t new_tok_type = new_tok->type;
+                    size_t new_tok_type = new_tok->type;
                     if (new_tok_type == TOKEN_OPERATOR_LT || new_tok_type == TOKEN_OPERATOR_GT ||
                         new_tok_type == TOKEN_OPERATOR_LTE || new_tok_type == TOKEN_OPERATOR_GTE ||
                         new_tok_type == TOKEN_OPERATOR_EQ || new_tok_type == TOKEN_OPERATOR_NEQ ||
@@ -271,7 +271,7 @@ node *parse_pratt_iter(const size_t rbp) {
     return left;
 }
 
-node *parse_pratt(const nodes t) {
+node *parse_pratt(nodes t) {
     pratt_tokens = t;
     pratt_tok_count = t.size;
     pratt_pos = 0;
@@ -288,13 +288,13 @@ void parse_expression_group(node *ex) {
     ex->type = NODE_GROUP;
     nodes *group = &ex->group.v;
     nodes_init(group);
-    const size_t start = pyc_ti;
-    const bool trim = ex->parent == NULL || ex->parent->type != STMT_FUNCTION_DEF;
+    size_t start = pyc_ti;
+    bool trim = ex->parent == NULL || ex->parent->type != STMT_FUNCTION_DEF;
 
     while (!tokens_over()) {
-        const token tok = token_peek(0);
-        const size_t tok_type = tok.type;
-        const size_t tok_type_t = tok_type & 0xf;
+        token tok = token_peek(0);
+        size_t tok_type = tok.type;
+        size_t tok_type_t = tok_type & 0xf;
 
         if (tok_type == TOKEN_LINE_BREAK_NEWLINE && paren) {
             pyc_ti++;
@@ -422,7 +422,7 @@ void parse_expression_lambda(node *ex) {
 
     while (!tokens_over()) {
         token *tok_p = &token_peek(0);
-        const token tok = *tok_p;
+        token tok = *tok_p;
 
         if (tok.type == TOKEN_SYMBOL_COLON) {
             pyc_ti++;
@@ -433,7 +433,7 @@ void parse_expression_lambda(node *ex) {
             syntax_error();
         }
 
-        const size_t tok_type = tok.type;
+        size_t tok_type = tok.type;
 
         for (size_t i = 0; i < args->size; i++) {
             if (args->data[i]->type == tok_type) {
@@ -444,7 +444,7 @@ void parse_expression_lambda(node *ex) {
         tokens_p_push(args, tok_p);
         pyc_ti++;
 
-        const token t = token_peek(0);
+        token t = token_peek(0);
         pyc_ti++;
 
         if (t.type == TOKEN_SYMBOL_COLON) {
@@ -470,7 +470,7 @@ void parse_expression_fstring(node *ex) {
         node *childExpr = parse_expression_child(ex);
         nodes_push(&ex->fstring.values, childExpr);
 
-        const token tk = token_peek(0);
+        token tk = token_peek(0);
 
         if (tk.type == TOKEN_SYMBOL_EXC || tk.type == TOKEN_SYMBOL_COLON) {
             pyc_ti++;
@@ -483,8 +483,8 @@ void parse_expression_fstring(node *ex) {
             nodes_push(&ex->fstring.extras, NULL);
 
         token *tok_p = &token_peek(0);
-        const token tok = *tok_p;
-        const size_t tok_type_t = tok.type & 0xf;
+        token tok = *tok_p;
+        size_t tok_type_t = tok.type & 0xf;
 
         if (tok_type_t != TOKEN_FSTRING_END &&
             tok_type_t != TOKEN_FSTRING_MIDDLE) {
@@ -509,9 +509,9 @@ void accumulate_tuple_expression(node *parent, nodes *tuple) {
     bool last_comma = false;
 
     while (!tokens_over()) {
-        const token tok = token_peek(0);
-        const size_t tok_type = tok.type;
-        const size_t tok_type_t = tok_type & 0xf;
+        token tok = token_peek(0);
+        size_t tok_type = tok.type;
+        size_t tok_type_t = tok_type & 0xf;
 
         if (tok_type == TOKEN_LINE_BREAK_NEWLINE && paren) {
             pyc_ti++;
@@ -549,9 +549,9 @@ void accumulate_call_arguments(node *parent) {
 
     while (!tokens_over()) {
         token *tok_p = &token_peek(0);
-        const token tok = *tok_p;
-        const size_t tok_type = tok.type;
-        const size_t tok_type_t = tok_type & 0xf;
+        token tok = *tok_p;
+        size_t tok_type = tok.type;
+        size_t tok_type_t = tok_type & 0xf;
 
         if (tok_type == TOKEN_SYMBOL_RPAREN)
             break;
@@ -577,7 +577,7 @@ void accumulate_call_arguments(node *parent) {
             pyc_ti += 2;
             if (tokens_over())
                 syntax_error();
-            const keyword kw = {.name = tok_p, .value = parse_expression_group_child(parent)};
+            keyword kw = {.name = tok_p, .value = parse_expression_group_child(parent)};
             keywords_push(kws, kw);
             continue;
         } else if (found_named_arg && !tok_val_eq(tok, "**") &&
@@ -619,15 +619,15 @@ void parse_expression_dict(node *ex) {
     ex->type = EXPR_DICT;
     nodes_init(&ex->dict.keys);
     nodes_init(&ex->dict.values);
-    const size_t start = pyc_ti;
+    size_t start = pyc_ti;
     nodes *keys = &ex->dict.keys;
     nodes *values = &ex->dict.values;
 
     while (!tokens_over()) {
-        const token *tok_p = &pyc_tokens.data[pyc_ti];
-        const token tok = *tok_p;
-        const size_t tok_type = tok.type;
-        const size_t tok_type_t = tok_type & 0xf;
+        token *tok_p = &pyc_tokens.data[pyc_ti];
+        token tok = *tok_p;
+        size_t tok_type = tok.type;
+        size_t tok_type_t = tok_type & 0xf;
 
         if (tok_type == TOKEN_SYMBOL_RBRACE)
             break;
@@ -664,7 +664,7 @@ void parse_expression_dict(node *ex) {
 
 void parse_comprehensions_post(node *parent, comprehensions *list) {
     while (!tokens_over()) {
-        const bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
+        bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
         if (is_async)
             pyc_ti++;
 
@@ -676,7 +676,7 @@ void parse_comprehensions_post(node *parent, comprehensions *list) {
         comp.is_async = is_async;
         nodes_init(&comp.ifs);
 
-        const size_t in_token = get_node_tok_index(TOKEN_OPERATOR_IN, true, false, false);
+        size_t in_token = get_node_tok_index(TOKEN_OPERATOR_IN, true, false, false);
         if (in_token == -1) {
             syntax_error();
         }
@@ -686,13 +686,13 @@ void parse_comprehensions_post(node *parent, comprehensions *list) {
         pyc_tok_count = pyc_tokens.size;
         assert_tokenP(TOKEN_OPERATOR_IN);
 
-        const size_t if_token = get_node_tok_index(TOKEN_KEYWORD_IF, true, false, false);
+        size_t if_token = get_node_tok_index(TOKEN_KEYWORD_IF, true, false, false);
         if (if_token != -1)
             pyc_tok_count = if_token;
         comp.iter = parse_expression_child(parent);
         pyc_tok_count = pyc_tokens.size;
 
-        const size_t else_token = get_node_tok_index(TOKEN_KEYWORD_ELSE, true, false, false);
+        size_t else_token = get_node_tok_index(TOKEN_KEYWORD_ELSE, true, false, false);
 
         if (else_token != -1) {
             raise_error_t(pyc_tokens.data[else_token],
@@ -787,9 +787,9 @@ void parse_expression_yield(node *ex) {
 
 void parse_expression_next(node *ex) {
     token *tok_p = &token_peek(0);
-    const token tok = *tok_p;
-    const size_t tok_type = tok.type;
-    const size_t tok_type_t = tok_type & 0xf;
+    token tok = *tok_p;
+    size_t tok_type = tok.type;
+    size_t tok_type_t = tok_type & 0xf;
 
     if (tok_type == TOKEN_KEYWORD_LAMBDA)
         return parse_expression_lambda(ex);
@@ -828,12 +828,12 @@ void parse_expression_next(node *ex) {
 
     if (tok_type_t == TOKEN_SYMBOL) {
         node *parent = ex->parent;
-        const bool p = paren;
+        bool p = paren;
         switch (tok_type) {
             case TOKEN_SYMBOL_DOT:
                 pyc_ti++;
                 token *tok2_p = &token_peek(0);
-                const token tok2 = *tok2_p;
+                token tok2 = *tok2_p;
                 if ((tok2.type & 0xf) != TOKEN_IDENTIFIER &&
                     tok2.type != TOKEN_KEYWORD_MATCH) {
                     syntax_error();
@@ -931,7 +931,7 @@ void parse_expression_next(node *ex) {
                     return;
                 }
 
-                const size_t for_index = get_node_tok_index(TOKEN_KEYWORD_FOR, true, false, false);
+                size_t for_index = get_node_tok_index(TOKEN_KEYWORD_FOR, true, false, false);
 
                 if (for_index != -1) {
                     parse_expression_list_comp(ex);
@@ -945,8 +945,8 @@ void parse_expression_next(node *ex) {
             case TOKEN_SYMBOL_LBRACE:
                 pyc_ti++;
                 paren = true;
-                const size_t for_ind = get_node_tok_index(TOKEN_KEYWORD_FOR, false, false, false);
-                const size_t colon_ind = get_node_tok_index(TOKEN_SYMBOL_COLON, true, false, false);
+                size_t for_ind = get_node_tok_index(TOKEN_KEYWORD_FOR, false, false, false);
+                size_t colon_ind = get_node_tok_index(TOKEN_SYMBOL_COLON, true, false, false);
 
                 if (for_ind != -1) {
                     if (colon_ind != -1) {
@@ -1022,11 +1022,11 @@ void parse_expression_next(node *ex) {
 // def test():
 //            ^ this function is run right here. right after the ':'. allowing
 //            the use of semicolons
-void parse_statement_group(node *st, const int spaces_parent) {
+void parse_statement_group(node *st, int spaces_parent) {
     st->type = NODE_GROUP;
     node *parent = st->parent;
-    const bool class_def = parent != NULL && parent->type == STMT_CLASS_DEF;
-    const bool match_def = parent != NULL && parent->type == STMT_MATCH;
+    bool class_def = parent != NULL && parent->type == STMT_CLASS_DEF;
+    bool match_def = parent != NULL && parent->type == STMT_MATCH;
     if (!class_def && !match_def) nodes_init(&st->group.v);
     else if (st->parent == NULL)
         fail();
@@ -1035,11 +1035,11 @@ void parse_statement_group(node *st, const int spaces_parent) {
     bool added_any = false;
     if (tokens_over())
         raise_error("expected a statement");
-    const token start = token_peek(0);
+    token start = token_peek(0);
 
     while (!tokens_over()) {
         token tok = token_peek(0);
-        const size_t tok_type = tok.type;
+        size_t tok_type = tok.type;
 
         indent_group_macro_thing(tok_type, tok, spaces, spaces_parent, found)
 
@@ -1049,7 +1049,7 @@ void parse_statement_group(node *st, const int spaces_parent) {
         added_any = true;
 
         if (class_def) {
-            const node_type type = childStmt->type;
+            node_type type = childStmt->type;
             if (type == STMT_FUNCTION_DEF) {
                 nodes_push(&parent->class_def.methods, childStmt);
             } else if (type == STMT_ASSIGN || type == STMT_ASSIGN_MULT) {
@@ -1069,20 +1069,20 @@ void parse_statement_group(node *st, const int spaces_parent) {
         nodes_shrink(&st->group.v);
 }
 
-node *parse_statement_group_child(node *parent, const int spaces_parent) {
+node *parse_statement_group_child(node *parent, int spaces_parent) {
     node *st = ast_node_create(parent);
     parse_statement_group(st, spaces_parent);
     return st;
 }
 
-void parse_statement_group_match_def(node *parent, const int spaces_parent) {
+void parse_statement_group_match_def(node *parent, int spaces_parent) {
     match_cases_init(&parent->match.cases);
     int spaces = spaces_parent;
     bool found = false;
 
     while (!tokens_over()) {
         token tok = token_peek(0);
-        const size_t tok_type = tok.type;
+        size_t tok_type = tok.type;
 
         indent_group_macro_thing(tok_type, tok, spaces, spaces_parent, found)
 
@@ -1091,8 +1091,8 @@ void parse_statement_group_match_def(node *parent, const int spaces_parent) {
         pyc_ti++;
 
         match_case cas;
-        const size_t if_index = get_node_tok_index(TOKEN_KEYWORD_IF, true, false, false);
-        const size_t len = pyc_tok_count;
+        size_t if_index = get_node_tok_index(TOKEN_KEYWORD_IF, true, false, false);
+        size_t len = pyc_tok_count;
         if (if_index != -1)
             pyc_tok_count = if_index;
         cas.pattern = parse_expression_child(parent);
@@ -1125,7 +1125,7 @@ void parse_statement_group_match_def(node *parent, const int spaces_parent) {
     match_cases_shrink(&parent->match.cases);
 }
 
-void parse_statement_group_try_catch(node *parent, const int spaces_parent) {
+void parse_statement_group_try_catch(node *parent, int spaces_parent) {
     assert_tokenP(TOKEN_SYMBOL_COLON);
     except_handlers_init(&parent->try_catch.handlers);
     parent->try_catch.else_body = NULL;
@@ -1147,7 +1147,7 @@ void parse_statement_group_try_catch(node *parent, const int spaces_parent) {
             pyc_ti++;
             if (tokens_over())
                 syntax_error();
-            const token t2 = token_peek(0);
+            token t2 = token_peek(0);
             if (t2.type == TOKEN_OPERATOR_MUL) {
                 if (!parent->try_catch.is_star) {
                     if (parent->try_catch.handlers.size > 0)
@@ -1220,8 +1220,8 @@ void parse_statements(node *st) {
     parse_statement_group(st, 0);
 }
 
-void parse_statement_for(node *st, const int spaces_parent) {
-    const bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
+void parse_statement_for(node *st, int spaces_parent) {
+    bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
     pyc_ti++;
     if (is_async) {
         if (tokens_over() || !tok_now_teq(TOKEN_KEYWORD_FOR))
@@ -1233,7 +1233,7 @@ void parse_statement_for(node *st, const int spaces_parent) {
     st->type = STMT_FOR;
     st->for_loop.is_async = is_async;
 
-    const size_t in_token = get_node_tok_index(TOKEN_OPERATOR_IN, true, false, false);
+    size_t in_token = get_node_tok_index(TOKEN_OPERATOR_IN, true, false, false);
     if (in_token == -1) {
         syntax_error();
     }
@@ -1262,7 +1262,7 @@ void parse_statement_for(node *st, const int spaces_parent) {
     }
 }
 
-void parse_statement_while(node *st, const int spaces_parent) {
+void parse_statement_while(node *st, int spaces_parent) {
     st->type = STMT_WHILE;
     pyc_ti++;
     st->while_loop.cond = parse_expression_group_child(st);
@@ -1270,8 +1270,8 @@ void parse_statement_while(node *st, const int spaces_parent) {
     st->while_loop.body = parse_statement_group_child(st, spaces_parent);
 }
 
-void parse_statement_with(node *st, const int spaces_parent) {
-    const bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
+void parse_statement_with(node *st, int spaces_parent) {
+    bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
     pyc_ti++;
     if (is_async) {
         if (tokens_over() || !tok_now_teq(TOKEN_KEYWORD_WITH))
@@ -1290,7 +1290,7 @@ void parse_statement_with(node *st, const int spaces_parent) {
         nodes_push(&st->with.contexts, context);
         if (tokens_over())
             syntax_error();
-        const token t = token_peek(0);
+        token t = token_peek(0);
         if (t.type == TOKEN_SYMBOL_COLON)
             break;
         if (t.type == TOKEN_SYMBOL_COMMA) {
@@ -1304,7 +1304,7 @@ void parse_statement_with(node *st, const int spaces_parent) {
         pyc_ti++;
 
         token *tok_p = &token_peek(0);
-        const token tok = *tok_p;
+        token tok = *tok_p;
         if ((tok.type & 0xf) != TOKEN_IDENTIFIER)
             syntax_error();
         tokens_p_push(&st->with.vars, tok_p);
@@ -1320,7 +1320,7 @@ void parse_statement_with(node *st, const int spaces_parent) {
     tokens_p_shrink(&st->with.vars);
 }
 
-void parse_statement_if(node *st, const int spaces_parent) {
+void parse_statement_if(node *st, int spaces_parent) {
     st->type = STMT_IF;
     pyc_ti++;
     nodes_init(&st->if_stmt.conditions);
@@ -1360,8 +1360,8 @@ void parse_statement_if(node *st, const int spaces_parent) {
     nodes_shrink(&st->if_stmt.bodies);
 }
 
-void parse_statement_function_def(node *st, const int spaces_parent) {
-    const bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
+void parse_statement_function_def(node *st, int spaces_parent) {
+    bool is_async = tok_now_teq(TOKEN_KEYWORD_ASYNC);
     pyc_ti++;
     if (is_async) {
         if (tokens_over() || !tok_now_teq(TOKEN_KEYWORD_DEF))
@@ -1384,7 +1384,7 @@ void parse_statement_function_def(node *st, const int spaces_parent) {
     st->function_def.name = namePtr;
     pyc_ti++;
 
-    const bool p = paren;
+    bool p = paren;
     paren = true;
 
     assert_tokenP(TOKEN_SYMBOL_LPAREN);
@@ -1398,8 +1398,8 @@ void parse_statement_function_def(node *st, const int spaces_parent) {
     nodes_init(defaults);
     while (!tokens_over()) {
         token *tok2_p = &token_peek(0);
-        const token tok2 = *tok2_p;
-        const size_t tok2_type = tok2.type;
+        token tok2 = *tok2_p;
+        size_t tok2_type = tok2.type;
 
         if (tok2.type == TOKEN_SYMBOL_RPAREN)
             break;
@@ -1407,8 +1407,8 @@ void parse_statement_function_def(node *st, const int spaces_parent) {
         if (tok2.type == TOKEN_LINE_BREAK_NEWLINE) {
         }
 
-        const bool is_ls = tok2_type == TOKEN_OPERATOR_MUL;
-        const bool is_kw = tok2_type == TOKEN_OPERATOR_POW;
+        bool is_ls = tok2_type == TOKEN_OPERATOR_MUL;
+        bool is_kw = tok2_type == TOKEN_OPERATOR_POW;
 
         if (is_ls) {
             pyc_ti++;
@@ -1493,7 +1493,7 @@ void parse_statement_function_def(node *st, const int spaces_parent) {
     st->function_def.body = parse_statement_group_child(st, spaces_parent);
 }
 
-void parse_statement_class(node *st, const int spaces) {
+void parse_statement_class(node *st, int spaces) {
     st->type = STMT_CLASS_DEF;
 
     nodes *dec = &st->class_def.decorators;
@@ -1515,7 +1515,7 @@ void parse_statement_class(node *st, const int spaces) {
     nodes_init(&st->class_def.methods);
     nodes_init(&st->class_def.properties);
 
-    const bool p = paren;
+    bool p = paren;
     paren = true;
 
     if (tokens_over())
@@ -1524,7 +1524,7 @@ void parse_statement_class(node *st, const int spaces) {
         pyc_ti++;
         while (!tokens_over()) {
             token *tok2_p = &token_peek(0);
-            const token tok2 = *tok2_p;
+            token tok2 = *tok2_p;
 
             if (tok2.type == TOKEN_SYMBOL_RPAREN)
                 break;
@@ -1584,7 +1584,7 @@ void parse_import_path(tokens_p *ls) {
     tokens_p_init(ls);
     while (!tokens_over()) {
         token *tok_p = &token_peek(0);
-        const token tok = *tok_p;
+        token tok = *tok_p;
 
         if ((tok.type & 0xf) != TOKEN_IDENTIFIER)
             break;
@@ -1595,7 +1595,7 @@ void parse_import_path(tokens_p *ls) {
         if (tokens_over())
             break;
 
-        const token t = token_peek(0);
+        token t = token_peek(0);
         if (t.type == TOKEN_SYMBOL_DOT) {
             pyc_ti++;
             continue;
@@ -1613,7 +1613,7 @@ void parse_import_path(tokens_p *ls) {
 void parse_import_aliases(import_aliases *imports) {
     import_aliases_init(imports);
 
-    const bool par = tok_now_teq(TOKEN_SYMBOL_LPAREN);
+    bool par = tok_now_teq(TOKEN_SYMBOL_LPAREN);
     if (par)
         pyc_ti++;
 
@@ -1747,7 +1747,7 @@ void parse_statement_raise(node *st, int spaces) {
 
 // handles both
 void parse_statement_global_nonlocal(node *st, int spaces) {
-    const bool is_global = tok_now_teq(TOKEN_KEYWORD_GLOBAL);
+    bool is_global = tok_now_teq(TOKEN_KEYWORD_GLOBAL);
     st->type = is_global ? STMT_GLOBAL : STMT_NONLOCAL;
     pyc_ti++;
     tokens_p *ls = is_global ? &st->global : &st->nonlocal;
@@ -1796,7 +1796,7 @@ void parse_statement_assert(node *st, int spaces) {
     assert_token_type_t(TOKEN_LINE_BREAK);
 }
 
-void parse_statement_match(node *st, const int spaces) {
+void parse_statement_match(node *st, int spaces) {
     st->type = STMT_MATCH;
     pyc_ti++;
     st->match.subject = parse_expression_child(st);
@@ -1804,7 +1804,7 @@ void parse_statement_match(node *st, const int spaces) {
     parse_statement_group_match_def(st, spaces);
 }
 
-void parse_statement_try(node *st, const int spaces) {
+void parse_statement_try(node *st, int spaces) {
     st->type = STMT_TRY_CATCH;
     pyc_ti++;
     if (tokens_over())
@@ -1812,7 +1812,7 @@ void parse_statement_try(node *st, const int spaces) {
     parse_statement_group_try_catch(st, spaces);
 }
 
-void parse_decorators(node *parent, const int spaces_parent) {
+void parse_decorators(node *parent, int spaces_parent) {
     nodes decorators;
     nodes_init(&decorators);
 
@@ -1841,7 +1841,7 @@ void parse_decorators(node *parent, const int spaces_parent) {
     }
 }
 
-void parse_statement_next(node *st, const int spaces) {
+void parse_statement_next(node *st, int spaces) {
     token *tok_p = &token_peek(0);
     token tok = *tok_p;
     size_t tok_type = tok.type;
@@ -1885,7 +1885,7 @@ void parse_statement_next(node *st, const int spaces) {
     } else if (tok_type == TOKEN_KEYWORD_DEL) {
         pyc_ti++;
         st->type = STMT_DELETE;
-        const node *del = st->del = parse_expression_child(st);
+        node *del = st->del = parse_expression_child(st);
         if (del->type != EXPR_INDEX && del->type != EXPR_ATTRIBUTE &&
             del->type != EXPR_IDENTIFIER)
             syntax_error();
@@ -1962,7 +1962,7 @@ void parse_statement_next(node *st, const int spaces) {
             pyc_ti++;
         } else {
             pyc_ti++;
-            const size_t second_eq = get_node_tok_index(TOKEN_SET_OPERATOR_EQ, true, false, false);
+            size_t second_eq = get_node_tok_index(TOKEN_SET_OPERATOR_EQ, true, false, false);
             if (second_eq != -1) {
                 st->type = STMT_ASSIGN_MULT;
                 nodes_init(&st->assign_mult.targets);
@@ -1992,7 +1992,7 @@ void parse_statement_next(node *st, const int spaces) {
     st->stmt_expr = expr;
 }
 
-token *get_node_token(const node *node) {
+token *get_node_token(node *node) {
     if (node == NULL) return NULL;
     switch (node->type) {
         case NODE_MODULE:
@@ -2101,7 +2101,7 @@ token *get_node_token(const node *node) {
 
 #ifdef NEED_AST_PRINT
 
-void node_print(const node *node, const int indent) {
+void node_print(node *node, int indent) {
     if (node == NULL) {
         printf("node(NULL)");
         return;
@@ -2415,7 +2415,7 @@ void node_print(const node *node, const int indent) {
     putchar(')');
 }
 
-void comprehension_print(const comprehension comp, const int indent) {
+void comprehension_print(comprehension comp, int indent) {
     printf("comprehension(target=");
     node_print(comp.target, indent);
     printf(", iter=");
@@ -2425,7 +2425,7 @@ void comprehension_print(const comprehension comp, const int indent) {
     printf(", is_async=%s)", comp.is_async ? "true" : "false");
 }
 
-void import_alias_print(const import_alias al, const int indent) {
+void import_alias_print(import_alias al, int indent) {
     printf("(val=");
     token_p_print(al.tok, indent + 1);
     printf(", as=");
@@ -2433,7 +2433,7 @@ void import_alias_print(const import_alias al, const int indent) {
     putchar(')');
 }
 
-void import_lib_print(const import_lib al, const int indent) {
+void import_lib_print(import_lib al, int indent) {
     printf("(val=");
     tokens_p_print_indent(al.tok, indent + 1);
     printf(", as=");
@@ -2441,7 +2441,7 @@ void import_lib_print(const import_lib al, const int indent) {
     putchar(')');
 }
 
-void keyword_print(const keyword kws, const int indent) {
+void keyword_print(keyword kws, int indent) {
     printf("(key=");
     token_p_print(kws.name, indent + 1);
     printf(", value=");
@@ -2449,7 +2449,7 @@ void keyword_print(const keyword kws, const int indent) {
     putchar(')');
 }
 
-void match_case_print(const match_case cas, const int indent) {
+void match_case_print(match_case cas, int indent) {
     printf("(pattern=");
     node_print(cas.pattern, indent);
     printf(", as=");
@@ -2461,7 +2461,7 @@ void match_case_print(const match_case cas, const int indent) {
     putchar(')');
 }
 
-void except_handler_print(const except_handler eh, const int indent) {
+void except_handler_print(except_handler eh, int indent) {
     printf("(type=");
     node_print(eh.class, indent);
     printf(", name=");
@@ -2664,21 +2664,21 @@ void comprehension_free(comprehension comp) {
 void import_alias_free(import_alias al) {
 }
 
-void import_lib_free(const import_lib al) {
+void import_lib_free(import_lib al) {
     free(al.tok.data);
 }
 
-void keyword_free(const keyword kw) {
+void keyword_free(keyword kw) {
     node_free(kw.value);
 }
 
-void match_case_free(const match_case kw) {
+void match_case_free(match_case kw) {
     node_free(kw.condition);
     node_free(kw.body);
     node_free(kw.pattern);
 }
 
-void except_handler_free(const except_handler eh) {
+void except_handler_free(except_handler eh) {
     node_free(eh.class);
     node_free(eh.body);
 }

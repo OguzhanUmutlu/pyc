@@ -393,6 +393,6 @@ void parse_statement_next(node *st, int spaces);
 
 void parse_statement_group(node *st, int spaces_parent);
 
-token *get_node_token(const node *node);
+token *get_node_token(node *node);
 
 #endif // PYC_PARSER_H

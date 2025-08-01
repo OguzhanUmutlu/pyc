@@ -19,7 +19,7 @@
         void singular##_free(val obj);                                         \
         vec_define(val, plural);                                               \
         vec_define_free(val, plural, singular##_free(a));                      \
-        void singular##_print(const val obj, const int indent);                            \
+        void singular##_print(val obj, int indent);                            \
         vec_define_print(val, plural, singular##_print(a, indent));
 #else
 #define vec_define_pyc(singular, plural, val)                              \
@@ -31,9 +31,9 @@
 #include "vec.h"
 #include <math.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <gmp.h>
 
 #define print_spaces(spaces)                                                   \
     for (int __ir = 0; __ir < spaces; __ir++)                                  \
@@ -99,11 +99,11 @@ typedef struct {
     size_t size;
 } sstream;
 
-void sstream_print(const sstream *a, int _);
+void sstream_print(sstream *a, int _);
 
-void sstream_append_l(sstream *a, const char *b, size_t b_len);
+void sstream_append_l(sstream *a, char *b, size_t b_len);
 
-void sstream_appendf(sstream *a, const char *fmt, ...);
+void sstream_appendf(sstream *a, char *fmt, ...);
 
 static inline void sstream_free(sstream *a) {
     if (a == NULL) return;
@@ -114,107 +114,10 @@ static inline void sstream_free(sstream *a) {
 
 vec_define_pyc(string, strings, char *);
 
-vec_define(double, doubles);
-
-typedef struct {
-    size_t size, capacity;
-    mpz_t *data;
-} bigints;
-
-static inline void bigints_init_reserved(bigints *v, size_t reserved) {
-    v->size = 0;
-    v->capacity = reserved;
-    if (!(v->data = (mpz_t *) malloc(sizeof(mpz_t) * v->capacity))) {
-        perror("malloc failed");
-        raise(SIGSEGV);
-        exit(EXIT_FAILURE);
-    }
-}
-
-static inline void bigints_init(bigints *v) { bigints_init_reserved(v, 4); }
-
-static inline void bigints_realloc(bigints *v, size_t n) {
-    if (n == v->capacity)return;
-    if (n == 0) {
-        free(v->data);
-        v->data = NULL;
-    } else if (v->data == NULL) {
-        v->data = (mpz_t *) malloc(sizeof(mpz_t) * n);
-        if (!v->data) {
-            perror("malloc failed");
-            raise(SIGSEGV);
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        mpz_t *newData = realloc(v->data, sizeof(mpz_t) * n);
-        if (!newData) {
-            perror("realloc failed");
-            raise(SIGSEGV);
-            exit(EXIT_FAILURE);
-        }
-        v->data = newData;
-    }
-    v->capacity = n;
-    if (v->size > n) v->size = n;
-}
-
-static inline void bigints_reserve_push(bigints *v) {
-    if (v->size >= v->capacity)
-        bigints_realloc(v, v->capacity > 1 ? (v->capacity + (v->capacity >> 1)) : 2);
-}
-
-static inline bool bigints_empty(bigints v) { return v.size == 0; }
-
-static inline void bigints_shrink(bigints *v) { if (v->size != v->capacity) bigints_realloc(v, v->size); }
-
-static inline void bigints_clear(bigints *v) {
-    if (!v->data) return;
-    for (size_t i = 0; i < v->size; i++) {
-        mpz_clear(v->data[i]);
-    }
-    free(v->data);
-    v->data = NULL;
-    v->size = 0;
-    v->capacity = 0;
-}
-
-static inline void bigints_resize(bigints *v, size_t n, mpz_t def_val) {
-    if (n > v->capacity) {
-        for (size_t i = n; i < v->size; i++) {
-            mpz_clear(v->data[i]);
-        }
-        bigints_realloc(v, n);
-        while (v->size < n) { mpz_set(v->data[v->size++], def_val); }
-    }
-    v->size = n;
-};
-
-static inline void bigints_print_indent(bigints v, size_t indent) {
-    if (!v.data) {
-        printf("mpz_t[]");
-        return;
-    }
-    printf("mpz_t[");
-    if (v.size == 0) {
-        printf("]");
-        return;
-    }
-    putchar('\n');
-    indent++;
-    for (size_t i = 0; i < v.size; i++) {
-        for (size_t j = 0; j < (indent) * 2; j++)
-            putchar(' ');
-        gmp_printf("%Zd", v.data[i]);
-        if (i < v.size - 1) putchar(',');
-        putchar('\n');
-    }
-    for (size_t i = 0; i < (indent <= 1 ? 0 : indent - 2) * 2; i++)putchar(' ');
-    putchar(']');
-};
+vec_define(uint64_t, u64_list);
+vec_define(double, f64_list);
 
 #define ensure_str(x) ((x) == NULL ? "" : (x))
-
-#define sstream_append(a, b) sstream_append_l(a, b, strlen(b))
 
 #ifndef __THROWNL
 #define __THROWNL

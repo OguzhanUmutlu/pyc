@@ -1,6 +1,6 @@
 #include "compiler.h"
 
-int main(const int argc, char **argv) {
+int main(int argc, char **argv) {
     if (argc != 2) {
         printf("Usage: pyc <filename>\n");
         return 1;
