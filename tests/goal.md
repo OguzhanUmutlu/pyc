@@ -1,3 +1,24 @@
+# Types
+
+There are a few new types in addition to the standard Python types.
+
+- `uint8` - unsigned 8-bit integer (0 to 255)
+- `uint16` - unsigned 16-bit integer (0 to 65535)
+- `uint32` - unsigned 32-bit integer (0 to 4294967295)
+- `uint64` - unsigned 64-bit integer (0 to 18446744073709551615)
+- `int8` - signed 8-bit integer (-128 to 127)
+- `int16` - signed 16-bit integer (-32768 to 32767)
+- `int32` - signed 32-bit integer (-2147483648 to 2147483647)
+- `int64` - signed 64-bit integer (-9223372036854775808 to 9223372036854775807)
+- `float32` - 32-bit floating point number (single precision)
+- `float64` - 64-bit floating point number (double precision)
+- `uint` - This is an alias for `uint64` (or `uint32` on 32-bit systems). Also called as word size unsigned integer.
+- `int` - This is an alias for `int64` (or `int32` on 32-bit systems). Also called as word size integer.
+- `float` - Alias for `float64`.
+- `bool` - Can only be `True` or `False`, extends `uint8`.
+- `str` - Represents a string, extends `list[uint8]`.
+- ``
+
 # Running Python code
 
 You can use the `python` module to run Python code directly.
@@ -116,16 +137,39 @@ my_box_explicit = Box[ValueHolder]("hi")  # Explicitly specifying type, same eff
 new_owner = my_box        # Ownership transferred to 'owner'
 # heap_hello.greet()      # Error: original owner invalidated
 
-alex = Shared[Hello]("Hi")  # Shared ownership example
+alex = Shared[ValueHolder]("Hi")  # Shared ownership example
 steve = alex   # Now they are sharing the same object
 alex.greet()   # Works
 steve.greet()  # Also works
+```
 
-config = ConstShared[Config]("config.json")  # ConstShared for immutable shared ownership
-# config.value = "new_config.json"  # Error: ConstShared cannot be modified
-x = config # Ownership is shared, but cannot modify the value
-print(config.file)
-print(x.file)  # Both print "config.json"
+# Scoped variables
+
+Scoped variables are defined using the `var` keyword. They are similar to local variables in Python, but they are
+scoped to the block they are defined in. They cannot be accessed outside their scope, which helps prevent accidental
+modifications and makes the code cleaner.
+
+```py
+var x = 10
+if x > 5:
+    x = 30 # Sets the `x` outside this scope
+    var x = 20
+    x = 40  # This modifies the `x` in the outer scope
+    print(x)  # Prints 40
+
+print(x)  # Prints 30, the outer `x` was modified
+```
+
+# Constant variables
+
+You can define constant variables using the `val` keyword. These are scoped variables that cannot be accessed outside
+their scope and cannot be modified after they are defined. They are useful for defining values that should not change
+throughout the program, similar to constants in other languages.
+
+```py
+val PI = 3.14159  # This is a constant, cannot be changed
+val alex = Shared[ValueHolder]("hi")
+# alex.value = "hello"  # Error: Cannot modify a constant variable
 ```
 
 # Copy operator overloading
